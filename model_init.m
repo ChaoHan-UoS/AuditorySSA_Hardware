@@ -1,5 +1,4 @@
 %%  Model Initialization
-% The following code is adapted from that of Yarden's SSA model in auditory cortex
 % This file generates a recurrent network and brings it to equilibrium
 
 % close all
@@ -29,6 +28,7 @@ LineWidth = 1;
 MarkerSize = 10;
 COLORBAR_FONTSIZE = 10;
 
+p_fluc = 0.0; % Add p_fluc of mean parameter value variations to mean values to test the robustness of model against network parameters; 0.2
 
 %% Parameters of the Model:
 % Number of columns:
@@ -44,30 +44,33 @@ ring_net = 0;
 tau = 0.001; %  membrane time constant of adaptive population (in seconds)
 tau_E = 0.005; % excitatory neurons' membrane time constant (in seconds)
 tau_I = 0.005; % inhibitory neurons' membrane time constant (in seconds) 
-tau_a = 1; % adaptation time constant (in seconds)
+tau_a_op = 1; % adaptation time constant (in seconds)
+tau_a = tau_a_op + tau_a_op*p_fluc*(rand-0.5)*2;
 
 % Connection strengths:
-w_ee = 1.3; % exc2exc 1.4
-w_ei = -1.2; % inh2exc -1.4 -1.4
-w_ie = 0.75; % exc2inh 0.75 0.5
-w_ii = -0.4; % inh2inh -0.5 0
-% w_ee = 1.4; % exc2exc 1.4
-% w_ei = -1.4; % inh2exc -1.4 -1.4
-% w_ie = 0.5; % exc2inh 0.75 0.5
-% w_ii = -0; % inh2inh -0.5 0
-w_a = 0.5; % ad2exc
-c = 20; % a_ss = c*Ea
+w_ee_op = 1.3*2.5; % exc2exc 
+w_ee = w_ee_op + w_ee_op*p_fluc*(rand-0.5)*2;
+w_ei_op = -1.2*2.5; % inh2exc 
+w_ei = w_ei_op + w_ei_op*p_fluc*(rand-0.5)*2;
+w_ie_op = 0.75*2.5; % exc2inh 
+w_ie = w_ie_op + w_ie_op*p_fluc*(rand-0.5)*2;
+w_ii_op = -0.4*2.5; % inh2inh 
+w_ii = w_ii_op + w_ii_op*p_fluc*(rand-0.5)*2;
+w_a_op = 0.5; % ad2exc
+w_a = w_a_op + w_a_op*p_fluc*(rand-0.5)*2;
+c_op = 20; % a_ss = c*Ea
+c = c_op + c_op*p_fluc*(rand-0.5)*2;
 
-w_ee1 = 0.075;  % exc2exc, between neighboring columns 0.045 0.170 0.080
+w_ee1_op = 0.075*2.5;  % exc2exc, between neighboring columns 
+w_ee1 = w_ee1_op + w_ee1_op*p_fluc*(rand-0.5)*2;
 w_ie1 = 0; % exc2inh, between neighboring columns
 w_ee2 = 0; % exc2exc, from one column to its 2nd neighbor
 w_ie2 = 0; % exc2inh, from one column to its 2nd neighbor
 
 %Gain function of cortical cell:
 Gain_thres = 0; % Threshold of gain 
-Gain_slope = 2.5; % Slope of gain 2
-Gain_max = 500;
-
+Gain_slope_op = 1; % Slope of gain 2.5
+Gain_slope = Gain_slope_op + Gain_slope_op*p_fluc*(rand-0.5)*2;
 
 %% Stimulus Parameters
 t_eq = 5; % The time given to reach equilibrium (in seconds). It is important to allow enough time, otherwise the response to the first stimulus is distorted.
@@ -81,6 +84,7 @@ num_steps_eq = floor(tmax/dt); % Total number of steps to reach the equilibrium
         
 %% Sensory Input
 lambda_c = 2;
+% lambda_c = lambda_c + lambda_c*p_fluc*(rand-0.5)*2;
 lambda_s_right = lambda_c;
 lambda_s_left = lambda_c;
 
@@ -168,6 +172,17 @@ a_act = Ea_act;
 % The network is allowed to reach a steady-state with no sensory input. 
 
 for i = 1:floor(t_eq/dt)
+    % Adding uncertainty to network paramters
+    tau_a = tau_a_op + tau_a_op*p_fluc*(rand-0.5)*2;
+    w_ee = w_ee_op + w_ee_op*p_fluc*(rand-0.5)*2;
+    w_ei = w_ei_op + w_ei_op*p_fluc*(rand-0.5)*2;
+    w_ie = w_ie_op + w_ie_op*p_fluc*(rand-0.5)*2;
+    w_ii = w_ii_op + w_ii_op*p_fluc*(rand-0.5)*2;
+    w_a = w_a_op + w_a_op*p_fluc*(rand-0.5)*2;
+    c = c_op + c_op*p_fluc*(rand-0.5)*2;
+    w_ee1 = w_ee1_op + w_ee1_op*p_fluc*(rand-0.5)*2;
+    Gain_slope = Gain_slope_op + Gain_slope_op*p_fluc*(rand-0.5)*2;
+    
     % The dynamics of synaptic input to adaptative cell:
     h_a = h_a + (dt/tau)*(-h_a + 0);
     
@@ -195,12 +210,10 @@ for i = 1:floor(t_eq/dt)
     E = E - Gain_thres;
     E = E * Gain_slope;
     E(E <  0) = 0;
-    E(E >  Gain_max) = Gain_max;
     I = h_I;
     I = I - Gain_thres;
     I = I * Gain_slope;
     I(I <  0) = 0;
-    I(I >  Gain_max) = Gain_max;
 
     % Tracking the activity of all neurons
     E_act(:,i) = E; 
@@ -235,6 +248,7 @@ if plot_init && all_plots
     title('adapation during Initial Run')
     xlabel('time(s)')
 end
+
 
 %% Saving
 % E_act = [];% just to save memory

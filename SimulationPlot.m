@@ -40,8 +40,8 @@ set(gca, 'FontSize', AXES_FONTSIZE);
 
 %% Low condition 
 clear
-load('Simulation Results/run_L.mat')
-% load(['Simulation Results/run_L_Tr1.mat']);
+% load('Simulation Results/run_L.mat')
+load(['Simulation Results/run_L_Tr1.mat']);
 n_stim_plot = 8;
 t = Stim_Onsets(1);
 t_marg = 0.1; 
@@ -243,7 +243,7 @@ c.Label.String = 'E (Spikes/s)';
 %% SSA in other protocols
 clear
 load('Simulation Results/meta_data.mat'); 
-Conds_Arr = [2 1 3 6 4]; % Odd Standard in Col4, Odd deviant in Col2, Equal, Dev alone in Col2, Dev among std in Col4 [2 1 3 6 4]
+Conds_Arr_plot = [2 1 3 6 4]; % Odd Standard in Col4, Odd deviant in Col4, Equal, Dev alone in Col4, Dev among std in Col4 [2 1 3 6 4]
 time_win = 0.100;  % (in seconds) Spiking response within a window to plot
 E_mean = zeros(length(Conds_Arr), ceil(time_win/dt));
 Sp_m_arr = zeros(length(Conds_Arr),1); % mean of spike count of all protocols
@@ -251,7 +251,7 @@ Sp_sd_arr = Sp_m_arr; % standard deviation of spike count of all protocols
 Sp_se_arr = Sp_m_arr; % standard error of the mean of all protocols
 jj = 1; % Counter of number of protocols
 
-
+% Compute dev alone first for normalization
 j = 0; % Number of deviant reponses in column 4 
 Spcount = zeros(1, n_stim*num_trials);
 for trnum = 1:num_trials
@@ -266,8 +266,8 @@ end
 Spcount = Spcount(1,1:j); % Only deviant responses
 Sp_m_DevA = mean(Spcount);
 
-for ii = Conds_Arr % Choose specific protocols
-    j = 0; % Number of deviant reponses in column 4 in each protocol
+for ii = Conds_Arr_plot % Choose specific protocols
+    j = 0; % Number of stimuli to column 4 in each protocol
     Spcount = zeros(1, n_stim*num_trials);
     for trnum = 1:num_trials
         load(['Simulation Results/run_' nev_cond_code{ii} '_Tr' num2str(trnum) '.mat']);
@@ -292,6 +292,11 @@ for ii = Conds_Arr % Choose specific protocols
     jj = jj + 1;
 end
 
+% SI and CSI computation
+SI = (Sp_m_arr(2) - Sp_m_arr(1))/(Sp_m_arr(2) + Sp_m_arr(1))
+CSI = (Sp_m_arr(2) - Sp_m_arr(5))/(Sp_m_arr(2) + Sp_m_arr(5))
+
+% Plotting
 color{1} = [0 0.4470 0.7410]; % Blue
 color{2} = [0.8500 0.3250 0.0980]; % Red
 color{3} = [0.3010 0.7450 0.9330]; % Cyan
@@ -352,5 +357,4 @@ disp('done')
 % for n = 1:6
 %     b.CData(n,:) = colorb{I(n)};
 % end
-    
 

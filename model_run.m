@@ -76,23 +76,29 @@ h_sq = h(:,:,Freqs_pres_inds); % Value of turing curve of each neuron at frequen
 %% Oddball Sequence Generation
 switch nev_cond
     case('Low')
+        rng(666);
         Oddball = [Freqs_Pres(2)*ones(1,ceil(Probs*n_stim)) Freqs_Pres(1)*ones(1,ceil((1-Probs)*n_stim))]; % Column 4 is deivant and Column 2 standard
         Oddball = Oddball(randperm(n_stim));
 %         Oddball = [2,2,2,4,2,2,4,2,2,2,4,2,2,2,4,2,2,4,2,4,2,2,4,2,2,2,2,2,4,2,4,2,2,2,2,2,2,2,4,2];
     case('High')
+        rng(666);
         Oddball = [Freqs_Pres(1)*ones(1,ceil(Probs*n_stim)) Freqs_Pres(2)*ones(1,ceil((1-Probs)*n_stim))];
         Oddball = Oddball(randperm(n_stim));
     case('Equal')
+        rng(666);
         Oddball = [Freqs_Pres(2)*ones(1,ceil(Probs*n_stim)) Freqs_Pres(1)*ones(1,ceil((1-Probs)*n_stim))];
         Oddball = Oddball(randperm(n_stim));
     case('Diverse Broad')
+        rng(666);
         freq_reps = n_stim/length(Freqs_Pres);
         Oddball = repmat(Freqs_Pres,1,freq_reps);
         Oddball = Oddball(randperm(n_stim));
     case('Deviant Alone F1')
+        rng(666);
         Oddball = [Freqs_Pres(1)*ones(1,ceil(Probs*n_stim)) zeros(1,ceil((1-Probs)*n_stim))];
         Oddball = Oddball(randperm(n_stim));
     case('Deviant Alone F2')
+        rng(666);
         Oddball = [Freqs_Pres(1)*ones(1,ceil(Probs*n_stim)) zeros(1,ceil((1-Probs)*n_stim))];
         Oddball = Oddball(randperm(n_stim));
 end
@@ -131,6 +137,17 @@ a_act_overall(:,1:floor(t_eq/dt)) = a_act(:,:);
 
 i = floor(t_eq/dt) + 1;
 while i < num_steps
+    % Adding uncertainty to network paramters
+    tau_a = tau_a_op + tau_a_op*p_fluc*(rand-0.5)*2;
+    w_ee = w_ee_op + w_ee_op*p_fluc*(rand-0.5)*2;
+    w_ei = w_ei_op + w_ei_op*p_fluc*(rand-0.5)*2;
+    w_ie = w_ie_op + w_ie_op*p_fluc*(rand-0.5)*2;
+    w_ii = w_ii_op + w_ii_op*p_fluc*(rand-0.5)*2;
+    w_a = w_a_op + w_a_op*p_fluc*(rand-0.5)*2;
+    c = c_op + c_op*p_fluc*(rand-0.5)*2;
+    w_ee1 = w_ee1_op + w_ee1_op*p_fluc*(rand-0.5)*2;
+    Gain_slope = Gain_slope_op + Gain_slope_op*p_fluc*(rand-0.5)*2;
+    
     % Calculating the sensory input:
     s_E = A*repmat(Spec_Temp(1,i,:),P,1).*h_sq;
     
@@ -161,18 +178,10 @@ while i < num_steps
     E = E - Gain_thres;
     E = E * Gain_slope;
     E(E <  0) = 0;
-    E(E >  Gain_max) = Gain_max;
     I = h_I;
     I = I - Gain_thres;
     I = I * Gain_slope;
     I(I <  0) = 0;
-    I(I >  Gain_max) = Gain_max;
-    
-    % Tracking the activity of all neurons
-    E_act(:,i) = E;
-    I_act(:,i) = I;
-    Ea_act(:,i) = Ea;
-    a_act(:,i) = a;
     
     % Tracking activity:
     E_act_overall(:,i) = E;
@@ -199,10 +208,8 @@ if save_results
     if length(A_Arr) > 1
         filename2 = [filename2 '_A' num2str(A)];
     end
-    if num_trials > 1
-        filename2 = [filename2 '_Tr' num2str(tr)];
-    end
-
+    
+    filename2 = [filename2 '_Tr' num2str(tr)];
     filename2 = [filename2 '.mat'];
     save(filename2)
     
